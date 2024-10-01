@@ -8,22 +8,22 @@ if (process.argv.length > 2){
 	const movieId = process.argv[2];
 	request(url, (error, response, body) => {
 		if (error) {
-			console.error('Error:', error);
-		} else if (response.statusCode === 200) {
-			const film = JSON.parse(body);
-			const characters = film.characters;
-
-			characters.forEach((characterUrl) => {
-				request(characterUrl, (error, response, body) => {
-					if (!error && response.statusCode === 200) {
-						const character = JSON.parse(body);
-						console.log(character.name);
-					}
-				});
-			});
-		} else {
-			console.error(`Failed to retrieve movie data. Status code: ${response.statusCode}`);
+			console.log(err);
 		}
-	})
-};
+		const charactersURL = JSON.parse(body).characters;
+		const charactersName = charactersURL.map(
+			url => new Promise((resolve, reject) => {
+				request(url, (promiseErr, __, charactersReqBody) => {
+					if (promiseErr) {
+						reject(promiseErr);
+					}
+					resolve(JSON.parse(charactersReqBody).name);
+				});
+			}));
+
+		Promise.all(charactersName)
+			.then(names => console.log(names.join('\n')))
+			.catch(allErr => console.log(allErr));
+	});
+}
 
